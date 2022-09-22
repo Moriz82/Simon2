@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AVFoundation
 
 class ViewController: UIViewController {
 
@@ -24,7 +25,11 @@ class ViewController: UIViewController {
   var timer:Timer = Timer();
   var speed = 1.0, patternLen = 1, userInputCount = 0;
   var takingInput = false;
-  var userInput:Input! = nil, currPattern:Input! = nil;
+    var userInput:Input! = nil;
+  var colorArray: [Input] = []
+    var player:AVAudioPlayer = AVAudioPlayer();
+    var showingArr = false;
+    var showArrIndex = 0;
   
   override func viewDidLoad () {
     super.viewDidLoad();
@@ -46,6 +51,16 @@ class ViewController: UIViewController {
     func SetColorWhite(button:UIButton){
         button.alpha = 0.1;
     }
+    
+    func playSound(soundColor: String){
+        let sound = Bundle.main.path(forResource: soundColor, ofType: "wav")
+        do {
+            player = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: sound ?? ""))
+        }catch {
+            print(error)
+        }
+        player.play()
+    }
 
   @objc func Update() {
       
@@ -54,63 +69,97 @@ class ViewController: UIViewController {
       redButton.alpha = 1;
       yellowButton.alpha = 1;
       
-      if !takingInput {
-          if (userInput == currPattern) {
-            userInputCount += 1;
-            userInput = nil;
-            if (userInputCount >= patternLen) {
-              userInputCount = 0;
-              patternLen += 1;
-              // TODO: dispatch queue and play sound for win
-              
-            } else {
-              UpdatePattern();
-            }
-            takingInput = true;
-          } else {
-              userInput = nil;
-              userInput = currPattern;
-            userInputCount = 0;
-            patternLen = 1;
-              SetColorWhite(button: greenButton);
-              SetColorWhite(button: blueButton);
-              SetColorWhite(button: redButton);
-              SetColorWhite(button: yellowButton);
-            //TODO: dispatch queue and play lose sound
+      if !showingArr{
+          if !takingInput && colorArray.count != 0 {
+              if (userInput == colorArray[userInputCount]) {
+                userInputCount += 1;
+                userInput = nil;
+                  if (userInputCount >= colorArray.count) {
+                      userInputCount = 0;
+                      patternLen += 1;
+                      // TODO: dispatch queue and play sound for win
+                      playSound(soundColor: "hiscore")
+                      UpdatePattern()
+                } else {
+                  //UpdatePattern();
+                }
+                takingInput = true;
+              } else {
+                  userInput = nil;
+                  userInputCount = 0;
+                  patternLen = 1;
+                  colorArray = [];
+                  SetColorWhite(button: greenButton);
+                  SetColorWhite(button: blueButton);
+                  SetColorWhite(button: redButton);
+                  SetColorWhite(button: yellowButton);
+                //TODO: dispatch queue and play lose sound
+                  playSound(soundColor: "lose")
+              }
           }
       }
+      else {
+          if !(showArrIndex >= colorArray.count) {
+              
+              switch colorArray[showArrIndex] {
+              case Input.Green:
+                  SetColorWhite(button: greenButton);
+                  playSound(soundColor: "green")
+              break;
+              case Input.Blue:
+                  SetColorWhite(button: blueButton);
+                  playSound(soundColor: "blue")
+              break;
+              case Input.Red:
+                  SetColorWhite(button: redButton);
+                  playSound(soundColor: "red")
+              break;
+              case Input.Yellow:
+                  SetColorWhite(button: yellowButton);
+                  playSound(soundColor: "yellow")
+              break;
+              }
+              
+              showArrIndex += 1;
+          }else{
+              showingArr = false;
+              showArrIndex = 0;
+          }
+      }
+      
+      print(colorArray)
   }
 
   func UpdatePattern() {
       switch Int.random(in: 1...4) {
       
       case 1:
-        currPattern = Input.Green;
-          SetColorWhite(button: greenButton);
+          colorArray.append(Input.Green)
       break;
       case 2:
-        currPattern = Input.Blue;
-          SetColorWhite(button: blueButton);
+          colorArray.append(Input.Blue)
       break;
       case 3:
-        currPattern = Input.Red;
-          SetColorWhite(button: redButton);
+          colorArray.append(Input.Red)
       break;
       case 4:
-          SetColorWhite(button: yellowButton);
-        currPattern = Input.Yellow;
+          colorArray.append(Input.Yellow)
       break;
       default: break;
       }
       
       takingInput = true;
-
+      showingArr = true;
+      
+      
     // TODO: dispatch queue and play sound and display color
     
   }
 
     @IBAction func StartButtonPressed(_ sender: Any) {
+        colorArray = [];
         UpdatePattern();
+        playSound(soundColor: "start")
     }
     
     @IBAction func GreenPressed(_ sender: Any) {
@@ -118,6 +167,7 @@ class ViewController: UIViewController {
           userInput = Input.Green;
           takingInput = false;
           // TODO: dispatch queue and play sound
+            playSound(soundColor: "green")
         }
     }
     
@@ -126,6 +176,7 @@ class ViewController: UIViewController {
             userInput = Input.Blue;
           takingInput = false;
           // TODO: dispatch queue and play sound
+            playSound(soundColor: "blue")
         }
     }
     
@@ -134,6 +185,7 @@ class ViewController: UIViewController {
             userInput = Input.Red;
           takingInput = false;
           // TODO: dispatch queue and play sound
+            playSound(soundColor: "red")
         }
     }
     
@@ -142,6 +194,7 @@ class ViewController: UIViewController {
             userInput = Input.Yellow;
           takingInput = false;
           // TODO: dispatch queue and play sound
+            playSound(soundColor: "yellow")
         }
     }
   
